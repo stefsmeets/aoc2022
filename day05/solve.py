@@ -26,7 +26,9 @@ def get_stacks(setup):
     return stacks
 
 
-def setup(lines):
+def setup(s):
+    lines = s.splitlines()
+
     header = []
     for i, line in enumerate(lines):
         if not line:
@@ -40,35 +42,30 @@ def setup(lines):
     return stacks, instructions
 
 
-@timeit
-def part1(s: str):
-    lines = s.splitlines()
-    stacks, instructions = setup(lines)
+def crate_mover(s: str, version: int = 9000):
+    stacks, instructions = setup(s)
 
     for instruction in instructions:
         _, num, _, src, _, dst = instruction.split()
         num = int(num)
 
-        for step in range(num):
-            crate = stacks[src].pop()
-            stacks[dst].append(crate)
+        crates = [stacks[src].pop() for step in range(num)]
+        if version == 9001:
+            crates = list(reversed(crates))
+
+        stacks[dst].extend(crates)
 
     return ''.join(stack.pop() for stack in stacks.values())
+
+
+@timeit
+def part1(s: str):
+    return crate_mover(s, version=9000)
 
 
 @timeit
 def part2(s: str):
-    lines = s.splitlines()
-    stacks, instructions = setup(lines)
-
-    for instruction in instructions:
-        _, num, _, src, _, dst = instruction.split()
-        num = int(num)
-
-        crates = list(reversed([stacks[src].pop() for step in range(num)]))
-        stacks[dst].extend(crates)
-
-    return ''.join(stack.pop() for stack in stacks.values())
+    return crate_mover(s, version=9001)
 
 
 def main() -> int:
