@@ -7,7 +7,7 @@ import numpy as np
 from helpers import timeit
 
 
-DATA = Path(__file__).with_name('data.txt').read_text()
+DATA = Path(__file__).with_name('data.txt')
 
 
 @timeit

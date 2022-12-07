@@ -5,7 +5,7 @@ from pathlib import Path
 from helpers import timeit
 
 
-DATA = Path(__file__).with_name('data.txt').read_text()
+DATA = Path(__file__).with_name('data.txt')
 
 
 def get_stacks(setup):
