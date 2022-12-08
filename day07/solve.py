@@ -1,8 +1,6 @@
 import argparse
-import os
-from pathlib import Path
 from collections import defaultdict
-import numpy as np
+from pathlib import Path
 
 from helpers import timeit
 
@@ -26,11 +24,11 @@ def get_dir_sizes(s):
                 pass
             case ('dir', drc):
                 pass
-            case (size, filename):
+            case (size, _):
                 size = int(size)
-                
+
                 sizes[p] += size
-                
+
                 for parent in p.parents:
                     sizes[parent] += size
 
