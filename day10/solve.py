@@ -1,4 +1,5 @@
 import argparse
+from collections import deque
 from pathlib import Path
 
 from helpers import timeit
@@ -7,71 +8,82 @@ from helpers import timeit
 DATA = Path(__file__).with_name('data.txt')
 
 
-@timeit
-def part1(s: str):
+def parse(s):
     lines = s.splitlines()
 
-    register = {'X': 1}
-    cycle = 1
-    signal_strength = {}
-
-    def update_signal(cycle):
-        if cycle % 20 == 0:
-            val = register['X']
-            signal_strength[cycle] = val * cycle
+    q = deque()
 
     for line in lines:
         match line.split():
             case ('addx', val):
-                val = int(val)
-                cycle += 1
-                update_signal(cycle)
-                cycle += 1
-                register['X'] += val
-                update_signal(cycle)
-            case ('noop', ):
-                cycle += 1
-                update_signal(cycle)
-            case _:
-                print(f'Unknown instruction: {line}')
+                q.append(('noop', None))
+                q.append(('addx', int(val)))
+            case ('noop',):
+                q.append(('noop', None))
 
-    return sum(signal_strength[val] for val in (20, 60, 100, 140, 180, 220))
+    return q
+
+
+def reshape(lst, *, h, w):
+    assert h * w == len(lst)
+
+    rows = []
+    for i in range(h):
+        rows.append(lst[i * w:(i + 1) * w])
+
+    return rows
+
+
+@timeit
+def part1(s: str):
+    q = parse(s)
+
+    X = 1
+    cycle = 1
+    signal_strength = []
+
+    def update_signal(cycle):
+        if cycle in (20, 60, 100, 140, 180, 220):
+            signal_strength.append(cycle * X)
+
+    while q:
+        op, arg = q.popleft()
+
+        update_signal(cycle)
+
+        cycle += 1
+
+        if op == 'addx':
+            X += arg
+
+    return sum(signal_strength)
 
 
 @timeit
 def part2(s: str):
-    lines = s.splitlines()
+    q = parse(s)
 
-    register = {'X': 1}
-    cycle = 0
-    signal = {}
+    X = 1
+    cycle = 1
+    signal = []
 
     def update_signal(cycle):
-        val = register['X']
+        pixel = (cycle - 1) % 40
+        draw = abs(pixel - X) <= 1
+        signal.append(draw)
 
-        col = cycle % 40
+    while q:
+        op, arg = q.popleft()
 
-        draw = (val - 1 <= col <= val + 1)
-        signal[cycle] = draw
+        update_signal(cycle)
 
-    for line in lines:
-        match line.split():
-            case ('addx', val):
-                val = int(val)
-                cycle += 1
-                update_signal(cycle)
-                cycle += 1
-                register['X'] += val
-                update_signal(cycle)
-            case ('noop', ):
-                cycle += 1
-                update_signal(cycle)
-            case _:
-                print(f'Unknown instruction: {line}')
+        cycle += 1
+
+        if op == 'addx':
+            X += arg
 
     answer = '\n\n'
-    for i in range(6):
-        row = list(signal.values())[i * 40:(i + 1) * 40]
+    for row in reshape(signal, h=6, w=40):
         answer += ''.join([' #'[draw] for draw in row])
         answer += '\n'
 
