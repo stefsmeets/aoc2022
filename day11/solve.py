@@ -1,5 +1,5 @@
 import argparse
-from collections import deque
+from dataclasses import dataclass
 from itertools import takewhile
 from math import prod
 from pathlib import Path
@@ -10,17 +10,36 @@ from helpers import timeit
 DATA = Path(__file__).with_name('data.txt')
 
 
-def parse_monkey(lines):
-    return {
-        'num': int(lines[0].strip(':').rsplit()[-1]),
-        'items': deque([
-            int(val) for val in lines[1].rsplit(':')[-1].split(',')]),
-        'op': lines[2].rsplit('= ')[-1],
-        'test_div': int(lines[3].split()[-1]),
-        'true': int(lines[4].rsplit()[-1]),
-        'false': int(lines[5].rsplit()[-1]),
-        'inspections': 0,
-    }
+@dataclass
+class Monkey:
+    num: int
+    items: list[int]
+    func: callable
+    test_div: int
+    true: int
+    false: int
+    inspections: int = 0
+
+    @classmethod
+    def from_input(cls, lines: list[str]):
+        *_, left, op, right = lines[2].rsplit(maxsplit=3)
+
+        agg = {'*': prod, '+': sum}[op]
+
+        match (left, right):
+            case ('old', 'old'):
+                func = lambda x: agg((x, x))
+            case ('old', val):
+                func = lambda x: agg((x, int(val)))
+
+        return cls(
+            num=int(lines[0].strip(':').rsplit()[-1]),
+            items=[int(val) for val in lines[1].rsplit(':')[-1].split(',')],
+            func=func,
+            test_div=int(lines[3].split()[-1]),
+            true=int(lines[4].rsplit()[-1]),
+            false=int(lines[5].rsplit()[-1]),
+        )
 
 
 def solve(s: str, div: int, rounds: int):
@@ -28,32 +47,32 @@ def solve(s: str, div: int, rounds: int):
 
     monkeys = []
 
-    while monkey := list(takewhile(lambda line: line, lines)):
-        monkeys.append(parse_monkey(monkey))
+    while monkey_input := list(takewhile(lambda line: line, lines)):
+        monkeys.append(Monkey.from_input(monkey_input))
 
-    mod = prod(monkey['test_div'] for monkey in monkeys)
+    mod = prod(monkey.test_div for monkey in monkeys)
 
     for rnd in range(rounds):
 
         for monkey in monkeys:
-            monkey['inspections'] += len(monkey['items'])
+            monkey.inspections += len(monkey.items)
 
-            while monkey['items']:
-                old = monkey['items'].popleft()
-
-                new = eval(monkey['op']) // div
+            for old in monkey.items:
+                new = monkey.func(old) // div
 
                 # Avoid numbers getting too large
                 new %= mod
 
-                test = new % monkey['test_div'] == 0
+                test = new % monkey.test_div == 0
 
-                throw_to = monkey['true'] if test else monkey['false']
+                throw_to = monkey.true if test else monkey.false
 
-                monkeys[throw_to]['items'].append(new)
+                monkeys[throw_to].items.append(new)
+
+            monkey.items.clear()
 
     inspections = sorted((
-        monkey['inspections'] for monkey in monkeys),
+        monkey.inspections for monkey in monkeys),
         reverse=True,
     )
 
@@ -62,11 +81,13 @@ def solve(s: str, div: int, rounds: int):
 
 @timeit
 def part1(s: str):
+    # > part1 took: 0.012 s, result: 55216
     return solve(s, div=3, rounds=20)
 
 
 @timeit
 def part2(s: str):
+    # > part2 took: 5.467 s, result: 12848882750
     return solve(s, div=1, rounds=10_000)
 
 
