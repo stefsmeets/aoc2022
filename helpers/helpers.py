@@ -30,13 +30,20 @@ def get_year_and_day() -> tuple[int, int]:
     return year, day
 
 
-def download(day: int, year: int) -> str:
+def get_headers(year: int) -> dict[str, str]:
     from cookie import cookie
+    return {
+        'Cookie': cookie,
+        'User-Agent': f'https://github.com/stefsmeets/aoc{year} by Stef Smeets'
+    }
+
+
+def download(day: int, year: int) -> str:
     import requests
 
     url = f'https://adventofcode.com/{year}/day/{day}/input'
 
-    headers = {'Cookie': cookie}
+    headers = get_headers(year=year)
     r = requests.get(url, headers=headers)
 
     return r.text
@@ -69,7 +76,6 @@ def remove_tags(text: str) -> str:
 
 
 def submit(answer: int, part: int, day: int, year: int):
-    from cookie import cookie
     import re
     import requests
 
@@ -79,7 +85,7 @@ def submit(answer: int, part: int, day: int, year: int):
 
     data = {'level': part, 'answer': answer}
 
-    headers = {'Cookie': cookie}
+    headers = get_headers(year=year)
     r = requests.post(url, headers=headers, data=data)
 
     match = re_ANSWER.search(r.text)
