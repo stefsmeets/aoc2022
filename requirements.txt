@@ -1,5 +1,6 @@
 -e helpers
 IPython
+networkx
 numpy
 pre-commit
 requests
