@@ -7,16 +7,14 @@ from helpers import timeit
 DATA = Path(__file__).with_name('data.txt')
 
 
-def get_sections(line) -> tuple[set[int], set[int]]:
-    elf_a, elf_b = line.split(',')
+def get_sections(line):
+    sections = []
 
-    a0, a1 = (int(val) for val in elf_a.split('-'))
-    sections_a = set(range(a0, a1 + 1))
+    for elf in line.split(','):
+        a, b = (int(val) for val in elf.split('-'))
+        sections.append(set(range(a, b + 1)))
 
-    b0, b1 = (int(val) for val in elf_b.split('-'))
-    sections_b = set(range(b0, b1 + 1))
-
-    return sections_a, sections_b
+    return sections
 
 
 @timeit
