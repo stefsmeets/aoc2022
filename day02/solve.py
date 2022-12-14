@@ -1,8 +1,5 @@
 import argparse
-import os
 from pathlib import Path
-
-import numpy as np
 
 from helpers import timeit
 
@@ -20,19 +17,18 @@ def part1(s: str):
 
     for line in lines:
         left, right = line.split()
-        round_score = points[right]
         match left, right:
             # losses
             case ('A', 'Z') | ('B', 'X') | ('C', 'Y'):
-                round_score += 0
+                round_score = 0
             # draws
             case ('A', 'X') | ('B', 'Y') | ('C', 'Z'):
-                round_score += 3
+                round_score = 3
             # wins
             case ('A', 'Y') | ('B', 'Z') | ('C', 'X'):
-                round_score += 6
+                round_score = 6
 
-        total_score += round_score
+        total_score += (round_score + points[right])
 
     return total_score
 
@@ -47,16 +43,15 @@ def part2(s: str):
 
     for line in lines:
         left, right = line.split()
-        round_score = points[right]
         match left, right:
             case ('A', 'Y') | ('B', 'X') | ('C', 'Z'):
-                round_score += 1
+                round_score = 1
             case ('A', 'Z') | ('B', 'Y') | ('C', 'X'):
-                round_score += 2
+                round_score = 2
             case ('A', 'X') | ('B', 'Z') | ('C', 'Y'):
-                round_score += 3
+                round_score = 3
 
-        total_score += round_score
+        total_score += (round_score + points[right])
 
     return total_score
 

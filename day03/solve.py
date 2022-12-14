@@ -1,10 +1,13 @@
 import argparse
+import string
 from pathlib import Path
 
 from helpers import timeit
 
 
 DATA = Path(__file__).with_name('data.txt')
+
+LETTERS = '_' + string.ascii_lowercase + string.ascii_uppercase
 
 
 def split_in_two(lst):
@@ -30,15 +33,8 @@ def part1(s: str):
 
     for line in lines:
         a, b = split_in_two(line)
-        common = set(a) & set(b)
-        assert len(common) == 1
-        item = tuple(common)[0]
-
-        index = 96 if item.islower() else 38
-
-        value = ord(item) - index
-
-        result += value
+        letter = (set(a) & set(b)).pop()
+        result += LETTERS.index(letter)
 
     return result
 
@@ -49,17 +45,9 @@ def part2(s: str):
 
     result = 0
 
-    for group in group_by_three(lines):
-        a, b, c = (set(line) for line in group)
-        common = set(a) & set(b) & set(c)
-        assert len(common) == 1
-        item = tuple(common)[0]
-
-        index = 96 if item.islower() else 38
-
-        value = ord(item) - index
-
-        result += value
+    for a, b, c in group_by_three(lines):
+        letter = (set(a) & set(b) & set(c)).pop()
+        result += LETTERS.index(letter)
 
     return result
 
