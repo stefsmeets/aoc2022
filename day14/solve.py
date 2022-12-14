@@ -20,62 +20,47 @@ def parse_traces(lines):
 def scan_cave(s):
     traces = parse_traces(s.splitlines())
 
-    cave = {}
+    cave = set()
 
     for (x1, x2), (y1, y2) in traces:
-
-        if x1 == x2:
-            for y in range(y1, y2 + 1):
-                cave[x1, y] = '#'
-
-        if y1 == y2:
-            for x in range(x1, x2 + 1):
-                cave[x, y1] = '#'
+        cave |= {complex(x, y) for x in range(x1, x2 + 1) for y in range(y1, y2 + 1)}
 
     return cave
 
 
-def solve(s, part2=False):
+def solve(s, part1=False):
     cave = scan_cave(s)
-    hole = (500, 0)
-    abyss = max(y for x, y in cave.keys()) + 1
+    hole = 500
+    abyss = max(pos.imag for pos in cave) + 1
 
-    def test_part1():
-        return grain_y < abyss
+    grain = complex(hole)
+    n_grains = 0
 
-    def test_part2():
-        return hole not in cave
-
-    test = test_part2 if part2 else test_part1
-
-    grain_x, grain_y = hole
-
-    while test():
-        for x, y in (
-                    (grain_x, grain_y + 1),
-                    (grain_x - 1, grain_y + 1),
-                    (grain_x + 1, grain_y + 1),
-        ):
-            if part2 and (y == abyss + 1):
-                pass
-            elif (x, y) not in cave:
-                grain_x, grain_y = x, y
+    while hole not in cave:
+        for new_pos in (grain + 1j, grain - 1 + 1j, grain + 1 + 1j):
+            if new_pos.imag == abyss:
+                if part1:
+                    return n_grains
+                pass  # part2
+            elif new_pos not in cave:
+                grain = new_pos
                 break
         else:
-            cave[grain_x, grain_y] = '.'
-            grain_x, grain_y = hole
+            cave.add(grain)
+            n_grains += 1
+            grain = complex(hole)
 
-    return sum(v == '.' for v in cave.values())
+    return n_grains
 
 
 @timeit
 def part1(s: str):
-    return solve(s)
+    return solve(s, part1=True)
 
 
 @timeit
 def part2(s: str):
-    return solve(s, part2=True)
+    return solve(s)
 
 
 def main() -> int:
