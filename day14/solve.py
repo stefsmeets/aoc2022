@@ -30,25 +30,26 @@ def scan_cave(s):
 
 def solve(s, part1=False):
     cave = scan_cave(s)
+
     hole = 500
     abyss = max(pos.imag for pos in cave) + 1
 
-    grain = complex(hole)
     n_grains = 0
+    grain = hole
 
     while hole not in cave:
         for new_pos in (grain + 1j, grain - 1 + 1j, grain + 1 + 1j):
-            if new_pos.imag == abyss:
-                if part1:
-                    return n_grains
-                pass  # part2
+            if part1 and (new_pos.imag == abyss):
+                return n_grains
+            elif new_pos.imag == abyss + 1:
+                pass
             elif new_pos not in cave:
                 grain = new_pos
                 break
         else:
             cave.add(grain)
             n_grains += 1
-            grain = complex(hole)
+            grain = hole
 
     return n_grains
 
