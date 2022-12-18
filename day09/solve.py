@@ -1,13 +1,7 @@
-import argparse
 from collections import defaultdict
 from dataclasses import dataclass
 from itertools import pairwise
 from pathlib import Path
-
-from helpers import timeit
-
-
-DATA = Path(__file__).with_name('data.txt')
 
 
 def parse_line(line):
@@ -55,32 +49,16 @@ def solve(s, n_knots):
     return sum(tail_pos.values())
 
 
-@timeit
 def part1(s: str):
     return solve(s, n_knots=2)
 
 
-@timeit
 def part2(s: str):
     return solve(s, n_knots=10)
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-p', '--parts', nargs='+', type=int,
-        choices=(1, 2), default=(1, 2))
-    parser.add_argument('data', nargs='?', default=DATA)
-    args = parser.parse_args()
-
-    data = Path(args.data).read_text()
-
-    for i in args.parts:
-        func = (..., part1, part2)[i]
-        func(data)
-
-    return 0
-
-
 if __name__ == '__main__':
-    raise SystemExit(main())
+    DATA = Path(__file__).with_name('data.txt')
+
+    print(part1(DATA))
+    print(part2(DATA))

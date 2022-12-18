@@ -1,13 +1,7 @@
-import argparse
 from dataclasses import dataclass
 from itertools import takewhile
 from math import prod
 from pathlib import Path
-
-from helpers import timeit
-
-
-DATA = Path(__file__).with_name('data.txt')
 
 
 @dataclass
@@ -28,9 +22,9 @@ class Monkey:
 
         match (left, right):
             case ('old', 'old'):
-                func = lambda x: agg((x, x))
+                def func(x): return agg((x, x))
             case ('old', val):
-                func = lambda x: agg((x, int(val)))
+                def func(x): return agg((x, int(val)))
 
         return cls(
             num=int(lines[0].strip(':').rsplit()[-1]),
@@ -79,34 +73,18 @@ def solve(s: str, div: int, rounds: int):
     return prod(inspections[0: 2])
 
 
-@timeit
 def part1(s: str):
     # > part1 took: 0.012 s, result: 55216
     return solve(s, div=3, rounds=20)
 
 
-@timeit
 def part2(s: str):
     # > part2 took: 5.467 s, result: 12848882750
     return solve(s, div=1, rounds=10_000)
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-p', '--parts', nargs='+', type=int,
-        choices=(1, 2), default=(1, 2))
-    parser.add_argument('data', nargs='?', default=DATA)
-    args = parser.parse_args()
-
-    data = Path(args.data).read_text()
-
-    for i in args.parts:
-        func = (..., part1, part2)[i]
-        func(data)
-
-    return 0
-
-
 if __name__ == '__main__':
-    raise SystemExit(main())
+    DATA = Path(__file__).with_name('data.txt')
+
+    print(part1(DATA))
+    print(part2(DATA))

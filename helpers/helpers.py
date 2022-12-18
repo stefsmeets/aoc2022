@@ -112,3 +112,26 @@ def submit_entry():
         day=day,
         year=year,
     )
+
+
+def solve_entry() -> int:
+    import argparse
+    from pathlib import Path
+    import sys
+    sys.path.append(str(Path.cwd()))
+    import solve
+
+    DATA = Path(solve.__file__).with_name('data.txt')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-p', '--parts', nargs='+', type=int,
+        choices=(1, 2), default=(1, 2))
+    parser.add_argument('data', nargs='?', default=DATA)
+    args = parser.parse_args()
+
+    data = Path(args.data).read_text()
+
+    for i in args.parts:
+        func = (..., solve.part1, solve.part2)[i]
+        timeit(func)(data)

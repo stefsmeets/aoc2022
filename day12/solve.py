@@ -1,13 +1,7 @@
-import argparse
 from pathlib import Path
 
 import networkx as nx
 import numpy as np
-
-from helpers import timeit
-
-
-DATA = Path(__file__).with_name('data.txt')
 
 
 def get_paths(grid, *, end):
@@ -30,7 +24,6 @@ def setup(s: str):
     return grid, end
 
 
-@timeit
 def part1(s: str):
     grid, end = setup(s)
     start = (0, 0)
@@ -38,7 +31,6 @@ def part1(s: str):
     return paths[start]
 
 
-@timeit
 def part2(s: str):
     grid, end = setup(s)
     starts = (tuple(start) for start in np.argwhere(grid == ord('a')))
@@ -46,22 +38,8 @@ def part2(s: str):
     return min(paths.get(start, np.inf) for start in starts)
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-p', '--parts', nargs='+', type=int,
-        choices=(1, 2), default=(1, 2))
-    parser.add_argument('data', nargs='?', default=DATA)
-    args = parser.parse_args()
-
-    data = Path(args.data).read_text()
-
-    for i in args.parts:
-        func = (..., part1, part2)[i]
-        func(data)
-
-    return 0
-
-
 if __name__ == '__main__':
-    raise SystemExit(main())
+    DATA = Path(__file__).with_name('data.txt')
+
+    print(part1(DATA))
+    print(part2(DATA))

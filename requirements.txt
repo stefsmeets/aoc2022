@@ -4,3 +4,4 @@ networkx
 numpy
 pre-commit
 requests
+scipy

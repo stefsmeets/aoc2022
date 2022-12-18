@@ -1,13 +1,6 @@
-import argparse
 from pathlib import Path
 
-from helpers import timeit
 
-
-DATA = Path(__file__).with_name('data.txt')
-
-
-@timeit
 def part1(s: str):
     lines = s.splitlines()
 
@@ -19,7 +12,6 @@ def part1(s: str):
     return 0
 
 
-@timeit
 def part2(s: str):
     lines = s.splitlines()
 
@@ -31,22 +23,8 @@ def part2(s: str):
     return 0
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-p', '--parts', nargs='+', type=int,
-        choices=(1, 2), default=(1, 2))
-    parser.add_argument('data', nargs='?', default=DATA)
-    args = parser.parse_args()
-
-    data = Path(args.data).read_text()
-
-    for i in args.parts:
-        func = (..., part1, part2)[i]
-        func(data)
-
-    return 0
-
-
 if __name__ == '__main__':
-    raise SystemExit(main())
+    DATA = Path(__file__).with_name('data.txt')
+
+    print(part1(DATA))
+    print(part2(DATA))
