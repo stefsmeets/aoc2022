@@ -5,20 +5,15 @@ import scipy.ndimage as ndi
 
 
 def solve(s: str, part2=False):
-    cubes = np.array([[int(val) for val in line.split(',')] for line in s.splitlines()])
-    space = np.zeros(cubes.max(axis=0) + 1)
+    cubes = np.loadtxt(s.splitlines(), delimiter=',', dtype=int)
+    space = np.zeros(cubes.max(axis=0) + 1, bool)
 
-    space[*cubes.T] = 1
+    space[*cubes.T] = True
 
     if part2:
         space = ndi.binary_fill_holes(space)
 
-    n_exposed = 0
-
-    for axis in (0, 1, 2):
-        n_exposed += np.sum(np.abs(np.diff(space, 1, axis, 0, 0)))
-
-    return int(n_exposed)
+    return sum(np.sum(np.diff(space, 1, i, False, False)) for i in (0, 1, 2))
 
 
 def part1(s: str):
