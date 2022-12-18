@@ -4,42 +4,29 @@ import numpy as np
 import scipy.ndimage as ndi
 
 
-def sides(x, y, z):
-    return {(x + 1, y, z),
-            (x - 1, y, z),
-            (x, y + 1, z),
-            (x, y - 1, z),
-            (x, y, z + 1),
-            (x, y, z - 1)}
+def solve(s: str, part2=False):
+    cubes = np.array([[int(val) for val in line.split(',')] for line in s.splitlines()])
+    space = np.zeros(cubes.max(axis=0) + 1)
 
+    space[*cubes.T] = 1
 
-def exposed_faces(cubes):
+    if part2:
+        space = ndi.binary_fill_holes(space)
+
     n_exposed = 0
 
-    for x, y, z in cubes:
-        n_exposed += len(sides(x, y, z) - cubes)
+    for axis in (0, 1, 2):
+        n_exposed += np.sum(np.abs(np.diff(space, 1, axis, 0, 0)))
 
-    return n_exposed
+    return int(n_exposed)
 
 
 def part1(s: str):
-    cubes = {tuple(int(val) for val in line.split(',')) for line in s.splitlines()}
-    return exposed_faces(cubes)
+    return solve(s)
 
 
 def part2(s: str):
-    cubes = np.array([[int(val) for val in line.split(',')] for line in s.splitlines()])
-
-    space = np.zeros(cubes.max(axis=0) + 1)
-
-    i, j, k = cubes.T
-    space[i, j, k] = 1
-
-    space = ndi.binary_fill_holes(space)
-
-    cubes = set(zip(*np.where(space)))
-
-    return exposed_faces(cubes)
+    return solve(s, part2=True)
 
 
 if __name__ == '__main__':
