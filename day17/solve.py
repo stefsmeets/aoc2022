@@ -2,8 +2,6 @@ from itertools import cycle
 from pathlib import Path
 
 
-DATA = Path(__file__).with_name('data.txt')
-
 ROCKS = (
     ((0, 2), (0, 3), (0, 4), (0, 5)),
     ((0, 3), (1, 2), (1, 3), (1, 4), (2, 3)),
@@ -74,7 +72,7 @@ def part2(s: str):
 
 
 if __name__ == '__main__':
-    DATA = Path(__file__).with_name('data.txt')
+    DATA = Path(__file__).with_name('data.txt').read_text()
 
     print(part1(DATA))
     print(part2(DATA))

@@ -3,8 +3,6 @@ from itertools import pairwise
 from pathlib import Path
 
 
-DATA = Path(__file__).with_name('data.txt')
-
 INTEGER_PAT = re.compile('-?[0-9]+')
 
 
@@ -58,7 +56,7 @@ def part2(s):
 
 
 if __name__ == '__main__':
-    DATA = Path(__file__).with_name('data.txt')
+    DATA = Path(__file__).with_name('data.txt').read_text()
 
     print(part1(DATA))
     print(part2(DATA))

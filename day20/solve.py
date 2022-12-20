@@ -33,7 +33,7 @@ def part2(s: str):
 
 
 if __name__ == '__main__':
-    DATA = Path(__file__).with_name('data.txt')
+    DATA = Path(__file__).with_name('data.txt').read_text().read_text()
 
     print(part1(DATA))
     print(part2(DATA))
