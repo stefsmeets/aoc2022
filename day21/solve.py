@@ -56,27 +56,15 @@ def part2(s: str):
 
     right = solve(monkey_2)
 
-    known['humn'] = magic_a = 0
+    x = 1e12
 
-    while solve(monkey_1) % 1 != 0:
-        known['humn'] = magic_a = magic_a + 1
+    known['humn'] = 0; a = solve(monkey_1)
+    known['humn'] = x; y = solve(monkey_1)
 
-    magic_b = 1
-    known['humn'] = magic_a + magic_b
+    b = (y - a) / x
+    ans = (right - a) / b
 
-    while solve(monkey_1) % 1 != 0:
-        magic_b += 1
-        known['humn'] = magic_a + magic_b
-
-    known['humn'] = magic_a
-    left1 = solve(monkey_1)
-
-    known['humn'] = magic_a + magic_b
-    left2 = solve(monkey_1)
-
-    magic_multiplier = (left1 - right) / (left1 - left2)
-
-    return int(magic_a + magic_b * magic_multiplier)
+    return int(round(ans))
 
 
 if __name__ == '__main__':
