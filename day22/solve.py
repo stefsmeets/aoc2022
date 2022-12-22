@@ -106,6 +106,19 @@ def part2(s: str):
             'bot': (2 * ln, 2 * ln),
             'right': (2 * ln, 3 * ln),
         }
+    else:
+        ln = 50
+        origins = {
+            'top': (0 * ln, 1 * ln),
+            'right': (0 * ln, 2 * ln),
+
+            'front': (1 * ln, 1 * ln),
+
+            'left': (2 * ln, 0 * ln),
+            'bot': (2 * ln, 1 * ln),
+
+            'back': (3 * ln, 0 * ln),
+        }
 
     def get_side(pos):
         r, c = pos
@@ -130,35 +143,35 @@ def part2(s: str):
     side = 'top'
 
     portals = {
-        ('top', up): ('bot', down),
+        ('top', up): ('back', right),
         ('top', down): ('front', down),
         ('top', left): ('left', right),
-        ('top', right): ('right', left),
+        ('top', right): ('right', right),
 
         ('bot', up): ('front', up),
-        ('bot', down): ('back', up),
-        ('bot', left): ('right', up),
-        ('bot', right): ('right', right),
+        ('bot', down): ('back', left),
+        ('bot', left): ('left', left),
+        ('bot', right): ('right', left),
 
-        ('left', up): ('top', right),
-        ('left', down): ('bot', right),
-        ('left', left): ('back', left),
-        ('left', right): ('front', right),
+        ('left', up): ('front', right),
+        ('left', down): ('back', down),
+        ('left', left): ('top', right),
+        ('left', right): ('bot', right),
 
-        ('right', up): ('front', left),
-        ('right', down): ('back', right),
-        ('right', left): ('bot', left),
-        ('right', right): ('top', left),
+        ('right', up): ('back', up),
+        ('right', down): ('front', left),
+        ('right', left): ('top', left),
+        ('right', right): ('bot', left),
 
         ('front', up): ('top', up),
         ('front', down): ('bot', down),
-        ('front', left): ('left', left),
-        ('front', right): ('right', down),
+        ('front', left): ('left', down),
+        ('front', right): ('right', up),
 
-        ('back', up): ('top', down),
-        ('back', down): ('bot', up),
-        ('back', left): ('right', up),
-        ('back', right): ('left', right),
+        ('back', up): ('left', up),
+        ('back', down): ('right', down),
+        ('back', left): ('top', down),
+        ('back', right): ('bot', up),
     }
 
     def teleport(pos, d, side):
@@ -173,32 +186,39 @@ def part2(s: str):
         nro, nco = origins[new_side]
 
         # convert to origin
-        rr = r - ro
+        rr = r - ro - dr
         cc = c - co - dc
 
         if d == new_d:
-            pass
+            new_r = nro + rr
+            new_c = nco + cc + 1
         elif abs(dr) and (dr == -ndr):
-            rr -= 1
-            cc = ln - cc - 1
+            new_r = nro + rr - 1
+            new_c = nco + ln - cc - 1
         elif abs(dc) and (dc == -ndc):
-            cc -= 1
-            rr = ln - rr - 1
+            new_c = nco + cc - 1
+            new_r = nro + ln - rr - 1
+        elif dc == -1 and ndr == 1:
+            new_r = nro + cc - 1
+            new_c = nco + rr
+        elif dr == -1 and ndc == 1:
+            new_r = nro + cc
+            new_c = nco + rr
+        elif dr == 1 and ndc == -1:
+            new_r = nro + cc
+            new_c = nco + rr + 1
+        elif dc == 1 and ndr == -1:
+            new_r = nro + cc + 1
+            new_c = nco + rr
         else:
-            c_tmp = cc
-            r_tmp = rr
-            rr = ln - c_tmp - 1
-            cc = ln - r_tmp - 1
+            new_r = nro + ln - cc - 1
+            new_c = nco + ln - rr - 1
 
-        new_pos = (nro + rr, nco + cc)
-
-        if new_pos == (8, 2):
-            breakpoint()
+        new_pos = new_r, new_c
 
         return new_pos, new_d, new_side
 
     def find_new_pos(pos, d, side, *, max_n):
-        print()
         r, c = pos
 
         accepted = (pos, d, side)
@@ -215,59 +235,35 @@ def part2(s: str):
             except ValueError:
                 pass
 
-            print(n, max_n, side, (tr, tc), (dr, dc))
-
-            if tr in (-1, max_r):
-                print('max r reached')
-
+            if tr in (-1, max_r) or tc in (-1, max_c):
                 (r, c), (dr, dc), side = teleport((tr, tc), d, side)
-                max_n -= n
-                n = 0
 
-            elif tc in (-1, max_c):
-                print('max c reached')
-
+            if board[tr, tc] == 0:  # wrap
                 (r, c), (dr, dc), side = teleport((tr, tc), d, side)
-                max_n -= n
-                n = 0
-
-            elif board[tr, tc] == 0:  # wrap
-                (r, c), (dr, dc), side = teleport((tr, tc), d, side)
-                print(f'teleported to {(r, c)} at {side=} facing: {(dr, dc)}')
-                max_n -= n
+                max_n = max_n - n + 1
                 n = 0
 
             elif board[tr, tc] == 1:  # open
-                print('accepted')
                 accepted = ((tr, tc), (dr, dc), side)
 
             elif board[tr, tc] == 2:  # rock
-                print('rock')
                 break
+
+            print(pos)
 
             n += 1
 
         return accepted
 
-    for instruction in route:
+    for i, instruction in enumerate(route):
         match instruction:
             case 'move', n:
                 d = directions[0]
-
                 (pos, new_d, side) = find_new_pos(pos, d, side, max_n=n)
-
-                print('facing', new_d)
-
-                while directions[0] != new_d:
-                    directions.rotate()
-
-                print('new position:', pos, 'at', side, 'facing', directions[0], new_d)
             case 'turn', 'L':
                 directions.rotate()
-                print('\nrotating L', directions[0])
             case 'turn', 'R':
                 directions.rotate(-1)
-                print('\nrotating R', directions[0])
 
     r, c = pos
 
@@ -276,6 +272,3 @@ def part2(s: str):
 
 if __name__ == '__main__':
     DATA = Path(__file__).with_name('data.txt').read_text()
-
-    print(part1(DATA))
-    print(part2(DATA))
