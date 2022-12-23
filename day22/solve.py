@@ -6,6 +6,12 @@ import numpy as np
 
 MOVE_PAT = re.compile(r'\d+|[A-Z]')
 
+RIGHT = (0, 1)
+DOWN = (1, 0)
+LEFT = (0, -1)
+UP = (-1, 0)
+LENGTH = 50
+
 
 def parse_board(lines):
     rows = []
@@ -36,89 +42,27 @@ def parse_route(line):
     return route
 
 
-def part1(s: str):
-    board_lines, route_line = s.split('\n\n')
-
-    board = parse_board(board_lines)
-    route = parse_route(route_line)
-
-    facings = ((0, 1), (1, 0), (0, -1), (-1, 0))
-    facing = facings[0]
-
-    def rotate_right(facing):
-        i = facings.index(facing)
-        return facings[(i + 1) % 4]
-
-    def rotate_left(facing):
-        i = facings.index(facing)
-        return facings[(i - 1) % 4]
-
-    max_r, max_c = board.shape
-
-    pos = 0, list(board[0]).index(1)
-
-    def find_new_pos(pos, facing, max_n):
-        r, c = best_pos = pos
-        dr, dc = facing
-        n = 1
-
-        while n <= max_n:
-            tr = (r + dr * n) % max_r
-            tc = (c + dc * n) % max_c
-
-            match board[tr, tc]:
-                case 2:
-                    break
-                case 1:
-                    best_pos = tr, tc
-                case 0:
-                    max_n += 1
-
-            n += 1
-
-        return best_pos
-
-    for instruction in route:
-        match instruction:
-            case 'move', n:
-                pos = find_new_pos(pos, facing, n)
-            case 'turn', 'L':
-                facing = rotate_left(facing)
-            case 'turn', 'R':
-                facing = rotate_right(facing)
-
-    r, c = pos
-
-    return 1000 * (r + 1) + 4 * (c + 1) + facings.index(facing)
-
-
-def part2(s: str):
-    board_lines, route_line = s.split('\n\n')
+def solve(s: str, *, portals):
+    *board_lines, _, route_line = s.split()
 
     full_board = parse_board(board_lines)
     route = parse_route(route_line)
 
-    ln = 50
     origins = {
-        'top': (0 * ln, 1 * ln),
-        'right': (0 * ln, 2 * ln),
+        'top': (0 * LENGTH, 1 * LENGTH),
+        'right': (0 * LENGTH, 2 * LENGTH),
 
-        'front': (1 * ln, 1 * ln),
+        'front': (1 * LENGTH, 1 * LENGTH),
 
-        'left': (2 * ln, 0 * ln),
-        'bot': (2 * ln, 1 * ln),
+        'left': (2 * LENGTH, 0 * LENGTH),
+        'bot': (2 * LENGTH, 1 * LENGTH),
 
-        'back': (3 * ln, 0 * ln),
+        'back': (3 * LENGTH, 0 * LENGTH),
     }
 
-    subboards = {key: full_board[ro:ro + ln, co:co + ln] for key, (ro, co) in origins.items()}
+    subboards = {key: full_board[ro:ro + LENGTH, co:co + LENGTH] for key, (ro, co) in origins.items()}
 
-    right = (0, 1)
-    down = (1, 0)
-    left = (0, -1)
-    up = (-1, 0)
-
-    facings = (right, down, left, up)
+    facings = (RIGHT, DOWN, LEFT, UP)
 
     def rotate_right(facing):
         i = facings.index(facing)
@@ -129,113 +73,8 @@ def part2(s: str):
         return facings[(i - 1) % 4]
 
     def teleport(pos, facing, side):
-        r, c = pos
-
-        if (side, facing) == ('top', up):
-            new_side, new_facing = 'back', right
-            r = c
-            c = 0
-
-        elif (side, facing) == ('top', down):
-            new_side, new_facing = 'front', down
-            r = 0
-
-        elif (side, facing) == ('top', left):
-            new_side, new_facing = 'left', right
-            r = ln - 1 - r
-
-        elif (side, facing) == ('top', right):
-            new_side, new_facing = 'right', right
-            c = 0
-
-        elif (side, facing) == ('bot', up):
-            new_side, new_facing = 'front', up
-            r = ln - 1
-
-        elif (side, facing) == ('bot', down):
-            new_side, new_facing = 'back', left
-            r = c
-            c = ln - 1
-
-        elif (side, facing) == ('bot', left):
-            new_side, new_facing = 'left', left
-            c = ln - 1
-
-        elif (side, facing) == ('bot', right):
-            new_side, new_facing = 'right', left
-            r = ln - 1 - r
-
-        elif (side, facing) == ('left', up):
-            new_side, new_facing = 'front', right
-            r = c
-            c = 0
-
-        elif (side, facing) == ('left', down):
-            new_side, new_facing = 'back', down
-            r = 0
-
-        elif (side, facing) == ('left', left):
-            new_side, new_facing = 'top', right
-            r = ln - 1 - r
-
-        elif (side, facing) == ('left', right):
-            new_side, new_facing = 'bot', right
-            c = 0
-
-        elif (side, facing) == ('right', up):
-            new_side, new_facing = 'back', up
-            r = ln - 1
-
-        elif (side, facing) == ('right', down):
-            new_side, new_facing = 'front', left
-            r = c
-            c = ln - 1
-
-        elif (side, facing) == ('right', left):
-            new_side, new_facing = 'top', left
-            c = ln - 1
-
-        elif (side, facing) == ('right', right):
-            new_side, new_facing = 'bot', left
-            r = ln - 1 - r
-
-        elif (side, facing) == ('front', up):
-            new_side, new_facing = 'top', up
-            r = ln - 1
-
-        elif (side, facing) == ('front', down):
-            new_side, new_facing = 'bot', down
-            r = 0
-
-        elif (side, facing) == ('front', left):
-            new_side, new_facing = 'left', down
-            c = r
-            r = 0
-
-        elif (side, facing) == ('front', right):
-            new_side, new_facing = 'right', up
-            c = r
-            r = ln - 1
-
-        elif (side, facing) == ('back', up):
-            new_side, new_facing = 'left', up
-            r = ln - 1
-
-        elif (side, facing) == ('back', down):
-            new_side, new_facing = 'right', down
-            r = 0
-
-        elif (side, facing) == ('back', left):
-            new_side, new_facing = 'top', down
-            c = r
-            r = 0
-
-        elif (side, facing) == ('back', right):
-            new_side, new_facing = 'bot', up
-            c = r
-            r = ln - 1
-
-        new_pos = (r, c)
+        new_side, new_facing, f = portals[side, facing]
+        new_pos = f(*pos)
 
         return new_pos, new_facing, new_side
 
@@ -251,7 +90,7 @@ def part2(s: str):
             tr = r + dr
             tc = c + dc
 
-            if tr in (-1, ln) or tc in (-1, ln):
+            if tr in (-1, LENGTH) or tc in (-1, LENGTH):
                 (tr, tc), (dr, dc), new_side = teleport((r, c), (dr, dc), side)
                 board = subboards[new_side]
 
@@ -287,6 +126,71 @@ def part2(s: str):
     r, c = pos
 
     return 1000 * (ro + r + 1) + 4 * (rc + c + 1) + facings.index(facing)
+
+
+def part1(s: str):
+    going_down = lambda r, c: (0, c)
+    going_up = lambda r, c: (LENGTH - 1, c)
+    going_left = lambda r, c: (r, LENGTH -1)
+    going_right = lambda r, c: (r, 0)
+
+    portals = {
+        ('top', UP): ('bot', UP, going_up),
+        ('top', DOWN): ('front', DOWN, going_down),
+        ('top', LEFT): ('right', LEFT, going_left),
+        ('top', RIGHT): ('right', RIGHT, going_right),
+        ('bot', UP): ('front', UP, going_up),
+        ('bot', DOWN): ('top', DOWN, going_down),
+        ('bot', LEFT): ('left', LEFT, going_left),
+        ('bot', RIGHT): ('left', RIGHT, going_right),
+        ('left', UP): ('back', UP, going_up),
+        ('left', DOWN): ('back', DOWN, going_down),
+        ('left', LEFT): ('bot', LEFT, going_left),
+        ('left', RIGHT): ('bot', RIGHT, going_right),
+        ('right', UP): ('right', UP, going_up),
+        ('right', DOWN): ('right', DOWN, going_down),
+        ('right', LEFT): ('top', LEFT, going_left),
+        ('right', RIGHT): ('top', RIGHT, going_right),
+        ('front', UP): ('top', UP, going_up),
+        ('front', DOWN): ('bot', DOWN, going_down),
+        ('front', LEFT): ('front', LEFT, going_left),
+        ('front', RIGHT): ('front', RIGHT, going_right),
+        ('back', UP): ('left', UP, going_up),
+        ('back', DOWN): ('left', DOWN, going_down),
+        ('back', LEFT): ('back', LEFT, going_left),
+        ('back', RIGHT): ('back', RIGHT, going_right),
+    }
+    return solve(s, portals=portals)
+
+
+def part2(s: str):
+    portals = {
+        ('top', UP): ('back', RIGHT, lambda r, c: (c, 0)),
+        ('top', DOWN): ('front', DOWN, lambda r, c: (0, c)),
+        ('top', LEFT): ('left', RIGHT, lambda r, c: (LENGTH - 1 - r, c)),
+        ('top', RIGHT): ('right', RIGHT, lambda r, c: (r, 0)),
+        ('bot', UP): ('front', UP, lambda r, c: (LENGTH - 1, c)),
+        ('bot', DOWN): ('back', LEFT, lambda r, c: (c, LENGTH - 1)),
+        ('bot', LEFT): ('left', LEFT, lambda r, c: (r, LENGTH - 1)),
+        ('bot', RIGHT): ('right', LEFT, lambda r, c: (LENGTH - 1 - r, c)),
+        ('left', UP): ('front', RIGHT, lambda r, c: (c, 0)),
+        ('left', DOWN): ('back', DOWN, lambda r, c: (0, c)),
+        ('left', LEFT): ('top', RIGHT, lambda r, c: (LENGTH - 1 - r, c)),
+        ('left', RIGHT): ('bot', RIGHT, lambda r, c: (r, 0)),
+        ('right', UP): ('back', UP, lambda r, c: (LENGTH - 1, c)),
+        ('right', DOWN): ('front', LEFT, lambda r, c: (c, LENGTH - 1)),
+        ('right', LEFT): ('top', LEFT, lambda r, c: (r, LENGTH - 1)),
+        ('right', RIGHT): ('bot', LEFT, lambda r, c: (LENGTH - 1 - r, c)),
+        ('front', UP): ('top', UP, lambda r, c: (LENGTH - 1, c)),
+        ('front', DOWN): ('bot', DOWN, lambda r, c: (0, c)),
+        ('front', LEFT): ('left', DOWN, lambda r, c: (0, r)),
+        ('front', RIGHT): ('right', UP, lambda r, c: (LENGTH - 1, r)),
+        ('back', UP): ('left', UP, lambda r, c: (LENGTH - 1, c)),
+        ('back', DOWN): ('right', DOWN, lambda r, c: (0, c)),
+        ('back', LEFT): ('top', DOWN, lambda r, c: (0, r)),
+        ('back', RIGHT): ('bot', UP, lambda r, c: (LENGTH - 1, r)),
+    }
+    return solve(s, portals=portals)
 
 
 if __name__ == '__main__':
