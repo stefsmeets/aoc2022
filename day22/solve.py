@@ -90,42 +90,23 @@ def part1(s: str):
 def part2(s: str):
     board_lines, route_line = s.split('\n\n')
 
-    board = parse_board(board_lines)
+    full_board = parse_board(board_lines)
     route = parse_route(route_line)
 
-    # test case
-    if board.shape == (12, 16):
-        ln = 4
-        origins = {
-            'top': (0 * ln, 2 * ln),
+    ln = 50
+    origins = {
+        'top': (0 * ln, 1 * ln),
+        'right': (0 * ln, 2 * ln),
 
-            'back': (1 * ln, 0 * ln),
-            'left': (1 * ln, 1 * ln),
-            'front': (1 * ln, 2 * ln),
+        'front': (1 * ln, 1 * ln),
 
-            'bot': (2 * ln, 2 * ln),
-            'right': (2 * ln, 3 * ln),
-        }
-    else:
-        ln = 50
-        origins = {
-            'top': (0 * ln, 1 * ln),
-            'right': (0 * ln, 2 * ln),
+        'left': (2 * ln, 0 * ln),
+        'bot': (2 * ln, 1 * ln),
 
-            'front': (1 * ln, 1 * ln),
+        'back': (3 * ln, 0 * ln),
+    }
 
-            'left': (2 * ln, 0 * ln),
-            'bot': (2 * ln, 1 * ln),
-
-            'back': (3 * ln, 0 * ln),
-        }
-
-    def get_side(pos):
-        r, c = pos
-        for side, (ro, co) in origins.items():
-            if ro <= r < ro + ln and co <= c < co + ln:
-                return side
-        raise ValueError(f'Cannot place {r,c}')
+    subboards = {key: full_board[ro:ro + ln, co:co + ln] for key, (ro, co) in origins.items()}
 
     right = (0, 1)
     down = (1, 0)
@@ -134,141 +115,181 @@ def part2(s: str):
 
     facings = (right, down, left, up)
 
-    directions = deque(facings)
+    def rotate_right(facing):
+        i = facings.index(facing)
+        return facings[(i + 1) % 4]
 
-    max_r, max_c = board.shape
+    def rotate_left(facing):
+        i = facings.index(facing)
+        return facings[(i - 1) % 4]
 
-    pos = 0, list(board[0]).index(1)
-
-    side = 'top'
-
-    portals = {
-        ('top', up): ('back', right),
-        ('top', down): ('front', down),
-        ('top', left): ('left', right),
-        ('top', right): ('right', right),
-
-        ('bot', up): ('front', up),
-        ('bot', down): ('back', left),
-        ('bot', left): ('left', left),
-        ('bot', right): ('right', left),
-
-        ('left', up): ('front', right),
-        ('left', down): ('back', down),
-        ('left', left): ('top', right),
-        ('left', right): ('bot', right),
-
-        ('right', up): ('back', up),
-        ('right', down): ('front', left),
-        ('right', left): ('top', left),
-        ('right', right): ('bot', left),
-
-        ('front', up): ('top', up),
-        ('front', down): ('bot', down),
-        ('front', left): ('left', down),
-        ('front', right): ('right', up),
-
-        ('back', up): ('left', up),
-        ('back', down): ('right', down),
-        ('back', left): ('top', down),
-        ('back', right): ('bot', up),
-    }
-
-    def teleport(pos, d, side):
-        new_side, new_d = portals[side, d]
-
+    def teleport(pos, facing, side):
         r, c = pos
 
-        dr, dc = d
-        ndr, ndc = new_d
+        if (side, facing) == ('top', up):
+            new_side, new_facing = 'back', right
+            r = c
+            c = 0
 
-        ro, co = origins[side]
-        nro, nco = origins[new_side]
+        elif (side, facing) == ('top', down):
+            new_side, new_facing = 'front', down
+            r = 0
 
-        # convert to origin
-        rr = r - ro - dr
-        cc = c - co - dc
+        elif (side, facing) == ('top', left):
+            new_side, new_facing = 'left', right
+            r = ln - 1 - r
 
-        if d == new_d:
-            new_r = nro + rr
-            new_c = nco + cc + 1
-        elif abs(dr) and (dr == -ndr):
-            new_r = nro + rr - 1
-            new_c = nco + ln - cc - 1
-        elif abs(dc) and (dc == -ndc):
-            new_c = nco + cc - 1
-            new_r = nro + ln - rr - 1
-        elif dc == -1 and ndr == 1:
-            new_r = nro + cc - 1
-            new_c = nco + rr
-        elif dr == -1 and ndc == 1:
-            new_r = nro + cc
-            new_c = nco + rr
-        elif dr == 1 and ndc == -1:
-            new_r = nro + cc
-            new_c = nco + rr + 1
-        elif dc == 1 and ndr == -1:
-            new_r = nro + cc + 1
-            new_c = nco + rr
-        else:
-            new_r = nro + ln - cc - 1
-            new_c = nco + ln - rr - 1
+        elif (side, facing) == ('top', right):
+            new_side, new_facing = 'right', right
+            c = 0
 
-        new_pos = new_r, new_c
+        elif (side, facing) == ('bot', up):
+            new_side, new_facing = 'front', up
+            r = ln - 1
 
-        return new_pos, new_d, new_side
+        elif (side, facing) == ('bot', down):
+            new_side, new_facing = 'back', left
+            r = c
+            c = ln - 1
 
-    def find_new_pos(pos, d, side, *, max_n):
-        r, c = pos
+        elif (side, facing) == ('bot', left):
+            new_side, new_facing = 'left', left
+            c = ln - 1
 
-        accepted = (pos, d, side)
+        elif (side, facing) == ('bot', right):
+            new_side, new_facing = 'right', left
+            r = ln - 1 - r
 
-        dr, dc = d
-        n = 1
+        elif (side, facing) == ('left', up):
+            new_side, new_facing = 'front', right
+            r = c
+            c = 0
 
-        while n <= max_n:
-            tr = (r + dr * n)
-            tc = (c + dc * n)
+        elif (side, facing) == ('left', down):
+            new_side, new_facing = 'back', down
+            r = 0
 
-            try:
-                side = get_side((tr, tc))
-            except ValueError:
-                pass
+        elif (side, facing) == ('left', left):
+            new_side, new_facing = 'top', right
+            r = ln - 1 - r
 
-            if tr in (-1, max_r) or tc in (-1, max_c):
-                (r, c), (dr, dc), side = teleport((tr, tc), d, side)
+        elif (side, facing) == ('left', right):
+            new_side, new_facing = 'bot', right
+            c = 0
 
-            if board[tr, tc] == 0:  # wrap
-                (r, c), (dr, dc), side = teleport((tr, tc), d, side)
-                max_n = max_n - n + 1
-                n = 0
+        elif (side, facing) == ('right', up):
+            new_side, new_facing = 'back', up
+            r = ln - 1
 
-            elif board[tr, tc] == 1:  # open
-                accepted = ((tr, tc), (dr, dc), side)
+        elif (side, facing) == ('right', down):
+            new_side, new_facing = 'front', left
+            r = c
+            c = ln - 1
+
+        elif (side, facing) == ('right', left):
+            new_side, new_facing = 'top', left
+            c = ln - 1
+
+        elif (side, facing) == ('right', right):
+            new_side, new_facing = 'bot', left
+            r = ln - 1 - r
+
+        elif (side, facing) == ('front', up):
+            new_side, new_facing = 'top', up
+            r = ln - 1
+
+        elif (side, facing) == ('front', down):
+            new_side, new_facing = 'bot', down
+            r = 0
+
+        elif (side, facing) == ('front', left):
+            new_side, new_facing = 'left', down
+            c = r
+            r = 0
+
+        elif (side, facing) == ('front', right):
+            new_side, new_facing = 'right', up
+            c = r
+            r = ln - 1
+
+        elif (side, facing) == ('back', up):
+            new_side, new_facing = 'left', up
+            r = ln - 1
+
+        elif (side, facing) == ('back', down):
+            new_side, new_facing = 'right', down
+            r = 0
+
+        elif (side, facing) == ('back', left):
+            new_side, new_facing = 'top', down
+            c = r
+            r = 0
+
+        elif (side, facing) == ('back', right):
+            new_side, new_facing = 'bot', up
+            c = r
+            r = ln - 1
+
+        new_pos = (r, c)
+
+        return new_pos, new_facing, new_side
+
+    def find_new_pos(pos, facing, side, *, max_n):
+        accepted = (pos, facing, side)
+        board = subboards[side]
+
+        for n in range(max_n):
+            dr, dc = facing
+            r, c = pos
+            new_side = side
+
+            tr = r + dr
+            tc = c + dc
+
+            if tr in (-1, ln) or tc in (-1, ln):
+                (tr, tc), (dr, dc), new_side = teleport((r, c), (dr, dc), side)
+                board = subboards[new_side]
+
+            if board[tr, tc] == 1:  # open
+                pos = (tr, tc)
+                facing = (dr, dc)
+                side = new_side
+
+                accepted = (pos, facing, side)
 
             elif board[tr, tc] == 2:  # rock
                 break
 
-            print(pos)
-
-            n += 1
+            elif board[tr, tc] == 0:
+                raise ValueError('This should no longer happen')
 
         return accepted
+
+    side = 'top'
+    pos = 0, 0
+    facing = facings[0]
 
     for i, instruction in enumerate(route):
         match instruction:
             case 'move', n:
-                d = directions[0]
-                (pos, new_d, side) = find_new_pos(pos, d, side, max_n=n)
+                (pos, facing, side) = find_new_pos(pos, facing, side, max_n=n)
+                print(f'{i} >> {n:3} >> {facing} - {side} - {pos}')
             case 'turn', 'L':
-                directions.rotate()
-            case 'turn', 'R':
-                directions.rotate(-1)
+                facing = rotate_left(facing)
+                print(f'{i} >>  L  >> {facing} - {side} - {pos}')
 
+            case 'turn', 'R':
+                facing = rotate_right(facing)
+                print(f'{i} >>  R  >> {facing} - {side} - {pos}')
+
+    ro, rc = origins[side]
     r, c = pos
 
-    return 1000 * (r + 1) + 4 * (c + 1) + facings.index(directions[0])
+    return 1000 * (ro + r + 1) + 4 * (rc + c + 1) + facings.index(facing)
 
 
 if __name__ == '__main__':
     DATA = Path(__file__).with_name('data.txt').read_text()
+
+    print(part1(DATA))
+    print(part2(DATA))
