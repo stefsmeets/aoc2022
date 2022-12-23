@@ -6,25 +6,37 @@ import numpy as np
 
 MOVE_PAT = re.compile(r'\d+|[A-Z]')
 
+
 RIGHT = (0, 1)
 DOWN = (1, 0)
 LEFT = (0, -1)
 UP = (-1, 0)
+
+FACINGS = (RIGHT, DOWN, LEFT, UP)
+
 LENGTH = 50
 
+ORIGINS = {
+    'top': (0 * LENGTH, 1 * LENGTH),
+    'right': (0 * LENGTH, 2 * LENGTH),
 
-def parse_board(lines):
-    rows = []
-    lines = lines.split('\n')
+    'front': (1 * LENGTH, 1 * LENGTH),
 
-    max_length = max(len(line) for line in lines)
+    'left': (2 * LENGTH, 0 * LENGTH),
+    'bot': (2 * LENGTH, 1 * LENGTH),
 
-    for line in lines:
-        row = [' .#'.index(c) for c in line]
-        row.extend([0 for _ in range(max_length - len(row))])
-        rows.append(row)
+    'back': (3 * LENGTH, 0 * LENGTH),
+}
 
-    return np.array(rows)
+
+def rotate_right(facing):
+    i = FACINGS.index(facing)
+    return FACINGS[(i + 1) % 4]
+
+
+def rotate_left(facing):
+    i = FACINGS.index(facing)
+    return FACINGS[(i - 1) % 4]
 
 
 def parse_route(line):
@@ -42,76 +54,54 @@ def parse_route(line):
     return route
 
 
+def parse_the_map(lines):
+    subboards = {}
+
+    for side, (ro, co) in ORIGINS.items():
+        subboard = np.array(
+            ['.#'.index(c) for
+                row in lines[ro:ro + LENGTH] for
+                c in row[co:co + LENGTH]],
+            dtype=bool)
+
+        subboards[side] = subboard.reshape(LENGTH, LENGTH)
+
+    return subboards
+
+
 def solve(s: str, *, portals):
-    *board_lines, _, route_line = s.split()
+    *map_lines, _, route = s.splitlines()
 
-    full_board = parse_board(board_lines)
-    route = parse_route(route_line)
+    route = parse_route(route)
 
-    origins = {
-        'top': (0 * LENGTH, 1 * LENGTH),
-        'right': (0 * LENGTH, 2 * LENGTH),
-
-        'front': (1 * LENGTH, 1 * LENGTH),
-
-        'left': (2 * LENGTH, 0 * LENGTH),
-        'bot': (2 * LENGTH, 1 * LENGTH),
-
-        'back': (3 * LENGTH, 0 * LENGTH),
-    }
-
-    subboards = {key: full_board[ro:ro + LENGTH, co:co + LENGTH] for key, (ro, co) in origins.items()}
-
-    facings = (RIGHT, DOWN, LEFT, UP)
-
-    def rotate_right(facing):
-        i = facings.index(facing)
-        return facings[(i + 1) % 4]
-
-    def rotate_left(facing):
-        i = facings.index(facing)
-        return facings[(i - 1) % 4]
+    the_map = parse_the_map(map_lines)
 
     def teleport(pos, facing, side):
         new_side, new_facing, f = portals[side, facing]
-        new_pos = f(*pos)
-
-        return new_pos, new_facing, new_side
+        return f(*pos), new_facing, new_side
 
     def find_new_pos(pos, facing, side, *, max_n):
         accepted = (pos, facing, side)
-        board = subboards[side]
+        rocks = the_map[side]
 
         for n in range(max_n):
-            dr, dc = facing
-            r, c = pos
-            new_side = side
+            new_pos = (pos[0] + facing[0], pos[1] + facing[1])
 
-            tr = r + dr
-            tc = c + dc
+            if any(t in (-1, LENGTH) for t in new_pos):
+                new_pos, facing, side = teleport(pos, facing, side)
+                rocks = the_map[side]
 
-            if tr in (-1, LENGTH) or tc in (-1, LENGTH):
-                (tr, tc), (dr, dc), new_side = teleport((r, c), (dr, dc), side)
-                board = subboards[new_side]
-
-            if board[tr, tc] == 1:  # open
-                pos = (tr, tc)
-                facing = (dr, dc)
-                side = new_side
-
-                accepted = (pos, facing, side)
-
-            elif board[tr, tc] == 2:  # rock
+            if rocks[new_pos]:  # rock
                 break
-
-            elif board[tr, tc] == 0:
-                raise ValueError('This should no longer happen')
+            else:  # open
+                pos = new_pos
+                accepted = (pos, facing, side)
 
         return accepted
 
     side = 'top'
     pos = 0, 0
-    facing = facings[0]
+    facing = FACINGS[0]
 
     for i, instruction in enumerate(route):
         match instruction:
@@ -122,10 +112,10 @@ def solve(s: str, *, portals):
             case 'turn', 'R':
                 facing = rotate_right(facing)
 
-    ro, rc = origins[side]
+    ro, rc = ORIGINS[side]
     r, c = pos
 
-    return 1000 * (ro + r + 1) + 4 * (rc + c + 1) + facings.index(facing)
+    return 1000 * (ro + r + 1) + 4 * (rc + c + 1) + FACINGS.index(facing)
 
 
 def part1(s: str):
