@@ -1,5 +1,4 @@
 import re
-from collections import deque
 from pathlib import Path
 
 import numpy as np
@@ -43,17 +42,24 @@ def part1(s: str):
     board = parse_board(board_lines)
     route = parse_route(route_line)
 
-    #          right    down    left       up
     facings = ((0, 1), (1, 0), (0, -1), (-1, 0))
-    directions = deque(facings)
+    facing = facings[0]
+
+    def rotate_right(facing):
+        i = facings.index(facing)
+        return facings[(i + 1) % 4]
+
+    def rotate_left(facing):
+        i = facings.index(facing)
+        return facings[(i - 1) % 4]
 
     max_r, max_c = board.shape
 
     pos = 0, list(board[0]).index(1)
 
-    def find_new_pos(pos, d, max_n):
+    def find_new_pos(pos, facing, max_n):
         r, c = best_pos = pos
-        dr, dc = d
+        dr, dc = facing
         n = 1
 
         while n <= max_n:
@@ -75,16 +81,15 @@ def part1(s: str):
     for instruction in route:
         match instruction:
             case 'move', n:
-                d = directions[0]
-                pos = find_new_pos(pos, d, n)
+                pos = find_new_pos(pos, facing, n)
             case 'turn', 'L':
-                directions.rotate()
+                facing = rotate_left(facing)
             case 'turn', 'R':
-                directions.rotate(-1)
+                facing = rotate_right(facing)
 
     r, c = pos
 
-    return 1000 * (r + 1) + 4 * (c + 1) + facings.index(directions[0])
+    return 1000 * (r + 1) + 4 * (c + 1) + facings.index(facing)
 
 
 def part2(s: str):
@@ -273,14 +278,10 @@ def part2(s: str):
         match instruction:
             case 'move', n:
                 (pos, facing, side) = find_new_pos(pos, facing, side, max_n=n)
-                print(f'{i} >> {n:3} >> {facing} - {side} - {pos}')
             case 'turn', 'L':
                 facing = rotate_left(facing)
-                print(f'{i} >>  L  >> {facing} - {side} - {pos}')
-
             case 'turn', 'R':
                 facing = rotate_right(facing)
-                print(f'{i} >>  R  >> {facing} - {side} - {pos}')
 
     ro, rc = origins[side]
     r, c = pos
