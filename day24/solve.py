@@ -42,54 +42,77 @@ def is_safe(field, pos):
         tr = r + dr
         tc = c + dc
 
-        if tr < 0 or tr == field.shape[0]:
+        if tr < 0 or tr >= field.shape[0]:
             continue
-        if tc < 0 or tc == field.shape[1]:
+        if tc < 0 or tc >= field.shape[1]:
             continue
 
         if not field[tr, tc]:
             yield tr, tc
 
 
-def part1(s: str):
-    left, right, up, down = parse_field(s)
+def its_gusty_here(gusts):
+    left, right, up, down = gusts
 
-    shape = left.shape
+    right = np.roll(right, 1, axis=1)
+    left = np.roll(left, -1, axis=1)
+    down = np.roll(down, 1, axis=0)
+    up = np.roll(up, -1, axis=0)
 
-    start = -1, 0
-    stop = (shape[0] - 1, shape[1] - 1)
+    return left, right, up, down
 
+
+def find_shortest_path(gusts, start, stop):
     safe = {start}
 
     for rnd in count(1):
-        right = np.roll(right, 1, axis=1)
-        left = np.roll(left, -1, axis=1)
-        down = np.roll(down, 1, axis=0)
-        up = np.roll(up, -1, axis=0)
-
-        field = sum((right, left, down, up))
+        gusts = its_gusty_here(gusts)
+        gust_map = sum(gusts)
 
         new_safe = {start}
+
         for pos in safe:
-            new_safe |= set(is_safe(field, pos))
+            new_safe |= set(is_safe(gust_map, pos))
 
         safe = new_safe
 
         if stop in safe:
             break
 
-    return rnd + 1
+    gusts = its_gusty_here(gusts)
+
+    return rnd + 1, gusts
+
+
+def part1(s: str):
+    gusts = parse_field(s)
+
+    max_r, max_c = gusts[0].shape
+
+    start = -1, 0
+    stop = (max_r - 1, max_c - 1)
+
+    rnd, gusts = find_shortest_path(gusts, start, stop)
+
+    return rnd
 
 
 def part2(s: str):
-    lines = s.splitlines()
+    gusts = parse_field(s)
 
-    for line in lines:
-        pass
+    max_r, max_c = gusts[0].shape
 
-    # breakpoint()
+    rounds = []
 
-    return 0
+    for start, stop in (
+        ((-1, 0), (max_r - 1, max_c - 1)),
+        ((max_r, max_c - 1), (0, 0)),
+        ((-1, 0), (max_r - 1, max_c - 1)),
+    ):
+        rnd, gusts = find_shortest_path(gusts, start, stop)
+        rounds.append(rnd)
+
+    return sum(rounds)
 
 
 if __name__ == '__main__':
