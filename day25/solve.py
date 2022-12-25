@@ -1,34 +1,17 @@
+from functools import reduce
 from pathlib import Path
 
-
-decode = {
-    '2': 2,
-    '1': 1,
-    '0': 0,
-    '-': -1,
-    '=': -2,
-}
-
-encode = {v: k for k, v in decode.items()}
+encode = {v - 2: k for v, k in enumerate('=-012')}
+decode = {v: k for k, v in encode.items()}
 
 
 def snafu2int(s):
-    tot = 0
-
-    for d in s:
-        tot = tot * 5 + decode[d]
-
-    return tot
+    return reduce(lambda x, y: x * 5 + decode[y], (0, *s))
 
 
 def int2snafu(d):
-    if d == 0:
-        return ''
-
-    r = (d + 2) % 5 - 2
-    q = (d + 2) // 5
-
-    return int2snafu(q) + encode[r]
+    q, r = divmod(d + 2, 5)
+    return (int2snafu(q) if q else '') + encode[r - 2]
 
 
 def part1(s: str):
